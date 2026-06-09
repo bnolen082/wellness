@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Wellness Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0f172a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #e2e8f0;
+    padding: 16px;
+    padding-bottom: 40px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: #f0f9ff;
+    margin-bottom: 2px;
+  }
+  .date-line {
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 20px;
+  }
+  .day-highlight {
+    color: #38bdf8;
+    font-weight: 700;
+  }
+
+  /* Water tracker */
+  .water-card {
+    background: rgba(56,189,248,0.08);
+    border: 1px solid rgba(56,189,248,0.2);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .water-card .section-title { color: #38bdf8; }
+
+  .bar-wrap {
+    position: relative;
+    background: rgba(255,255,255,0.08);
+    border-radius: 99px;
+    height: 26px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    width: 0%;
+    background: #38bdf8;
+    transition: width 0.4s ease, background 0.3s;
+  }
+  .bar-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .bottles-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .bottle-btn {
+    width: 46px;
+    padding: 8px 4px 6px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .bottle-btn.filled {
+    background: rgba(56,189,248,0.18);
+    border-color: rgba(56,189,248,0.4);
+  }
+  .bottle-btn.pop { transform: scale(1.2); }
+  .bottle-btn svg { display: block; margin: 0 auto; }
+
+  .water-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .wbtn {
+    width: 44px; height: 44px; border-radius: 50%;
+    font-size: 24px; cursor: pointer; border: none; line-height: 1;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .wbtn:active { transform: scale(0.9); }
+  .wbtn-minus {
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,255,255,0.15) !important;
+    color: #94a3b8;
+  }
+  .wbtn-plus {
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(14,165,233,0.4);
+  }
+  .wbtn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+  .w-count { color: #f0f9ff; font-size: 32px; font-weight: 800; text-align: center; line-height: 1; }
+  .w-sub { color: #475569; font-size: 12px; text-align: center; }
+  .water-congrats {
+    text-align: center;
+    color: #22d3a5;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+    display: none;
+  }
+
+  /* Checklist sections */
+  .section {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .section.morning .section-title { color: #fbbf24; }
+  .section.pills-am .section-title { color: #a78bfa; }
+  .section.face-am .section-title { color: #f472b6; }
+  .section.midday .section-title { color: #34d399; }
+  .section.face-pm .section-title { color: #fb923c; }
+  .section.evening .section-title { color: #818cf8; }
+  .section.hair .section-title { color: #4ade80; }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .check-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .check-item:first-of-type { padding-top: 0; }
+
+  .checkbox {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    border: 2px solid rgba(255,255,255,0.2);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+    font-size: 14px;
+  }
+  .check-item.checked .checkbox {
+    background: #22c55e;
+    border-color: #22c55e;
+  }
+  .check-item.checked .checkbox::after { content: '✓'; color: #fff; font-weight: 700; }
+
+  .item-label {
+    flex: 1;
+    font-size: 15px;
+    color: #cbd5e1;
+    line-height: 1.3;
+  }
+  .check-item.checked .item-label {
+    color: #475569;
+    text-decoration: line-through;
+  }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 99px;
+    letter-spacing: 0.5px;
+  }
+  .badge-wed { background: rgba(251,191,36,0.2); color: #fbbf24; }
+  .badge-eod { background: rgba(74,222,128,0.2); color: #4ade80; }
+  .badge-weekly { background: rgba(129,140,248,0.2); color: #818cf8; }
+  .badge-asneeded { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .badge-8wk { background: rgba(74,222,128,0.15); color: #4ade80; font-size: 9px; }
+
+  .item-disabled {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+  .item-note {
+    font-size: 11px;
+    color: #475569;
+    margin-top: 2px;
+  }
+
+  /* Folene progress */
+  .folene-progress {
+    font-size: 11px;
+    color: #4ade80;
+    margin-top: 2px;
+  }
+
+  /* Reset */
+  .reset-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: #475569;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 8px;
+    transition: color 0.2s;
+  }
+  .reset-btn:hover { color: #94a3b8; }
+
+  .progress-summary {
+    text-align: center;
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 16px;
+  }
+  .progress-summary span { color: #38bdf8; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1>🌿 Wellness Tracker</h1>
+<div class="date-line" id="dateLine"></div>
+<div class="progress-summary" id="progressSummary"></div>
+
+<!-- WATER -->
+<div class="water-card">
+  <div class="section-title">💧 Water</div>
+  <div class="bar-wrap">
+    <div class="bar-fill" id="barFill"></div>
+    <span class="bar-label" id="barLabel">0.0 L / 2.5 L</span>
+  </div>
+  <div class="bottles-row" id="bottles"></div>
+  <div class="water-controls">
+    <button class="wbtn wbtn-minus" id="wMinus" onclick="wChange(-1)">−</button>
+    <div>
+      <div class="w-count" id="wCount">0</div>
+      <div class="w-sub">of 5 bottles</div>
+    </div>
+    <button class="wbtn wbtn-plus" id="wPlus" onclick="wChange(1)">+</button>
+  </div>
+  <div class="water-congrats" id="waterCongrats">🎉 Hydration goal hit!</div>
+</div>
+
+<!-- MORNING -->
+<div class="section morning">
+  <div class="section-title">🌅 Morning</div>
+  <div class="check-item" data-key="fenugreek" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Fenugreek seed water<div class="item-note">1 glass, empty stomach</div></div>
+  </div>
+  <div class="check-item" data-key="exercise" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Exercise<div class="item-note">45 min moderate activity</div></div>
+  </div>
+</div>
+
+<!-- MORNING PILLS -->
+<div class="section pills-am">
+  <div class="section-title">💊 Morning Pills</div>
+  <div class="check-item" data-key="omega3" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Omega-3<div class="item-note">1 pill</div></div>
+  </div>
+  <div class="check-item" data-key="b12" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">B12<div class="item-note">1 pill</div></div>
+  </div>
+  <div class="check-item" data-key="vitd" id="vitdItem" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">
+      Vitamin D &nbsp;<span class="badge badge-wed">WED ONLY</span>
+      <div class="item-note" id="vitdNote"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MORNING FACE -->
+<div class="section face-am">
+  <div class="section-title">🧴 Morning Face</div>
+  <div class="check-item" data-key="face-cleanser-am" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Cleanser<div class="item-note">In shower</div></div>
+  </div>
+  <div class="check-item" data-key="moisturizer-am" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Moisturizer</div>
+  </div>
+  <div class="check-item" data-key="sunblock" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Z-Block Sunblock</div>
+  </div>
+</div>
+
+<!-- MORNING HAIR -->
+<div class="section hair">
+  <div class="section-title">💇 Morning Hair</div>
+  <div class="check-item" data-key="minoxidil-am" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Minoxidil<div class="item-note">Morning application</div></div>
+  </div>
+</div>
+
+<!-- MIDDAY -->
+<div class="section midday">
+  <div class="section-title">☀️ Midday</div>
+  <div class="check-item" data-key="chia" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Chia seeds<div class="item-note">2 spoons soaked in water, add lemon</div></div>
+  </div>
+</div>
+
+<!-- EVENING FACE -->
+<div class="section face-pm">
+  <div class="section-title">🌙 Evening Face</div>
+  <div class="check-item" data-key="face-cleanser-pm" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Cleanser</div>
+  </div>
+  <div class="check-item" data-key="moisturizer-pm" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Moisturizer</div>
+  </div>
+  <div class="check-item" data-key="pimecrolimus" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Pimecrolimus &nbsp;<span class="badge badge-asneeded">AS NEEDED</span></div>
+  </div>
+</div>
+
+<!-- EVENING -->
+<div class="section evening">
+  <div class="section-title">💊 Evening</div>
+  <div class="check-item" data-key="psyllium" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Psyllium husk<div class="item-note">1 spoon in 1 glass water</div></div>
+  </div>
+</div>
+
+<!-- EVENING HAIR -->
+<div class="section hair">
+  <div class="section-title">💇 Evening Hair</div>
+  <div class="check-item" data-key="minoxidil-pm" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">Minoxidil<div class="item-note">Evening application</div></div>
+  </div>
+</div>
+
+<!-- HAIR -->
+<div class="section hair">
+  <div class="section-title">💇 Hair</div>
+  <div class="check-item" data-key="folene" id="foleneItem" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">
+      Folene &nbsp;<span class="badge badge-eod">EVERY OTHER DAY</span>
+      <div class="folene-progress" id="foleneProgress"></div>
+    </div>
+  </div>
+  <div class="check-item" data-key="nizoral" id="nizoralItem" onclick="toggle(this)">
+    <div class="checkbox"></div>
+    <div class="item-label">
+      Nizoral Shampoo &nbsp;<span class="badge badge-weekly">WEEKLY</span>
+      <div class="item-note" id="nizoralNote"></div>
+    </div>
+  </div>
+</div>
+
+<button class="reset-btn" onclick="resetDay()">Reset Today</button>
+
+<script>
+  var WATER_GOAL = 5;
+  var FOLENE_START = new Date('2026-06-09');
+  var FOLENE_WEEKS = 8;
+
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var todayKey = today.toISOString().slice(0,10);
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var dayName = dayNames[today.getDay()];
+  var isWed = today.getDay() === 3;
+
+  // --- Date line ---
+  document.getElementById('dateLine').innerHTML =
+    '<span class="day-highlight">' + dayName + '</span>, ' +
+    monthNames[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
+
+  // --- Folene logic ---
+  function getFoleneInfo() {
+    var msPerDay = 86400000;
+    var diffDays = Math.round((today - FOLENE_START) / msPerDay);
+    var endDate = new Date(FOLENE_START.getTime() + FOLENE_WEEKS * 7 * msPerDay);
+    var isActive = today >= FOLENE_START && today <= endDate;
+    var isFoleneDay = isActive && (diffDays % 2 === 0);
+    var weekNum = Math.floor(diffDays / 7) + 1;
+    var daysLeft = Math.round((endDate - today) / msPerDay);
+    return { isActive, isFoleneDay, weekNum, daysLeft, diffDays };
+  }
+
+  // --- Nizoral logic (track last used) ---
+  function getNizoralInfo() {
+    var lastUsed = localStorage.getItem('nizoral_last_used');
+    if (!lastUsed) return { due: true, lastUsedStr: null };
+    var last = new Date(lastUsed);
+    last.setHours(0,0,0,0);
+    var diff = Math.round((today - last) / 86400000);
+    return { due: diff >= 7, lastUsedStr: lastUsed, daysSince: diff };
+  }
+
+  // --- Storage helpers ---
+  function loadState() {
+    var raw = localStorage.getItem('wt_state_' + todayKey);
+    return raw ? JSON.parse(raw) : { water: 0, checks: {} };
+  }
+  function saveState(state) {
+    localStorage.setItem('wt_state_' + todayKey, JSON.stringify(state));
+  }
+
+  var state = loadState();
+
+  // --- Water ---
+  function bottleSVG(filled) {
+    var cap = filled ? '#0ea5e9' : '#64748b';
+    var body = filled ? '#38bdf8' : '#334155';
+    return '<svg width="28" height="46" viewBox="0 0 40 64" fill="none">'
+      + '<rect x="13" y="0" width="14" height="8" rx="3" fill="' + cap + '"/>'
+      + '<rect x="6" y="8" width="28" height="48" rx="6" fill="' + body + '"/>'
+      + (filled ? '<rect x="6" y="26" width="28" height="30" fill="#0ea5e9" opacity="0.45"/>' : '')
+      + '<rect x="10" y="13" width="5" height="16" rx="2.5" fill="white" opacity="0.3"/>'
+      + '</svg>';
+  }
+
+  function renderWater() {
+    var c = state.water;
+    var pct = Math.min(c / WATER_GOAL, 1);
+    var fill = document.getElementById('barFill');
+    fill.style.width = (pct * 100) + '%';
+    fill.style.background = c >= WATER_GOAL ? '#22d3a5' : '#38bdf8';
+    document.getElementById('barLabel').textContent = (c * 0.5).toFixed(1) + ' L / 2.5 L';
+    document.getElementById('wCount').textContent = c;
+    document.getElementById('wMinus').disabled = c === 0;
+    document.getElementById('wPlus').disabled = c >= WATER_GOAL;
+    document.getElementById('waterCongrats').style.display = c >= WATER_GOAL ? 'block' : 'none';
+    var html = '';
+    for (var i = 0; i < WATER_GOAL; i++) {
+      html += '<div class="bottle-btn ' + (i < c ? 'filled' : '') + '" id="wb' + i + '">' + bottleSVG(i < c) + '</div>';
+    }
+    document.getElementById('bottles').innerHTML = html;
+  }
+
+  function wChange(delta) {
+    var prev = state.water;
+    state.water = Math.max(0, Math.min(WATER_GOAL, state.water + delta));
+    saveState(state);
+    if (delta > 0 && state.water !== prev) {
+      renderWater();
+      var b = document.getElementById('wb' + (state.water - 1));
+      if (b) { b.classList.add('pop'); setTimeout(function(){ b.classList.remove('pop'); }, 350); }
+    } else { renderWater(); }
+    updateProgress();
+  }
+
+  // --- Checklist ---
+  function toggle(el) {
+    var key = el.getAttribute('data-key');
+    state.checks[key] = !state.checks[key];
+    // Special: track nizoral last used date
+    if (key === 'nizoral' && state.checks[key]) {
+      localStorage.setItem('nizoral_last_used', todayKey);
+    }
+    saveState(state);
+    renderChecks();
+    updateProgress();
+  }
+
+  function renderChecks() {
+    var items = document.querySelectorAll('.check-item');
+    items.forEach(function(el) {
+      var key = el.getAttribute('data-key');
+      if (state.checks[key]) {
+        el.classList.add('checked');
+      } else {
+        el.classList.remove('checked');
+      }
+    });
+  }
+
+  // --- Conditional items ---
+  function setupConditionals() {
+    var fi = getFoleneInfo();
+    var foleneEl = document.getElementById('foleneItem');
+    var prog = document.getElementById('foleneProgress');
+
+    if (!fi.isActive) {
+      foleneEl.classList.add('item-disabled');
+      prog.textContent = '8-week course complete';
+    } else if (!fi.isFoleneDay) {
+      foleneEl.classList.add('item-disabled');
+      prog.textContent = 'Rest day — next application tomorrow · Week ' + fi.weekNum + ' of 8';
+    } else {
+      prog.textContent = 'Application day ✓ · Week ' + fi.weekNum + ' of 8 · ' + fi.daysLeft + ' days left';
+    }
+
+    // Vitamin D — grey out if not Wednesday
+    var vitdEl = document.getElementById('vitdItem');
+    var vitdNote = document.getElementById('vitdNote');
+    if (!isWed) {
+      vitdEl.classList.add('item-disabled');
+      var daysUntilWed = (3 - today.getDay() + 7) % 7 || 7;
+      vitdNote.textContent = 'Next dose in ' + daysUntilWed + ' day' + (daysUntilWed > 1 ? 's' : '');
+    } else {
+      vitdNote.textContent = "It's Wednesday — take your Vitamin D!";
+    }
+
+    // Nizoral
+    var niz = getNizoralInfo();
+    var nizNote = document.getElementById('nizoralNote');
+    if (niz.lastUsedStr) {
+      if (niz.due) {
+        nizNote.textContent = 'Due! Last used ' + niz.daysSince + ' days ago';
+        nizNote.style.color = '#fb923c';
+      } else {
+        nizNote.textContent = 'Used ' + niz.daysSince + ' day' + (niz.daysSince !== 1 ? 's' : '') + ' ago — next in ' + (7 - niz.daysSince) + ' days';
+      }
+    } else {
+      nizNote.textContent = 'No record yet — use when ready';
+    }
+  }
+
+  // --- Progress summary ---
+  function updateProgress() {
+    var allItems = document.querySelectorAll('.check-item:not(.item-disabled)');
+    var total = allItems.length;
+    var done = 0;
+    allItems.forEach(function(el) {
+      if (state.checks[el.getAttribute('data-key')]) done++;
+    });
+    if (state.water >= WATER_GOAL) done++;
+    total++;
+    document.getElementById('progressSummary').innerHTML =
+      '<span>' + done + ' / ' + total + '</span> tasks completed today';
+  }
+
+  // --- Reset ---
+  function resetDay() {
+    if (!confirm('Reset all of today\'s progress?')) return;
+    state = { water: 0, checks: {} };
+    saveState(state);
+    renderWater();
+    renderChecks();
+    updateProgress();
+  }
+
+  // --- Init ---
+  setupConditionals();
+  renderWater();
+  renderChecks();
+  updateProgress();
+</script>
+</body>
+</html>
